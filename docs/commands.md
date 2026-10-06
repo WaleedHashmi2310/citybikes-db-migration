@@ -17,9 +17,9 @@ docker compose logs -f postgres
 docker compose restart airflow-scheduler
 ```
 
-**Tear down everything (CAUTION: removes volumes if you add `-v`):**
+**Tear down everything (CAUTION: removes volumes and wipes all database/S3 data if you add `-v`):**
 ```bash
-docker compose down
+docker compose down -v
 ```
 
 ## PostgreSQL / Flyway
@@ -38,12 +38,18 @@ docker compose run --rm flyway migrate
 
 **Access the Airflow web UI:**
 - URL: `http://localhost:8080`
-- User/Pass: (Usually defined in env vars, default `airflow` / `airflow`)
+- User/Pass: `airflow` / `airflow`
 
 **Trigger a DAG manually via CLI:**
 ```bash
 docker exec -it airflow-webserver airflow dags trigger citybikes_ingestion_dag
 ```
+
+## MinIO (S3)
+
+**Access the MinIO Web Console:**
+- URL: `http://localhost:9001`
+- User/Pass: `minioadmin` / `minioadmin`
 
 ## Kafka & Debezium
 
@@ -56,12 +62,23 @@ docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-
 ```bash
 docker exec -it kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
-    --topic postgres.public.stations_frankfurt \
+    --topic pg.citybikes.stations \
     --from-beginning
 ```
 
-**Register Debezium Connector (Example):**
+**Register Debezium Source Connector:**
 ```bash
 curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" \
 localhost:8083/connectors/ -d @cdc/register-postgres.json
+```
+
+**Register Confluent S3 Sink Connector:**
+```bash
+curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" \
+localhost:8083/connectors/ -d @cdc/register-s3-sink.json
+```
+
+**Check Connectors Status:**
+```bash
+curl -s http://localhost:8083/connectors/ | jq
 ```

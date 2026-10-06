@@ -126,6 +126,10 @@ def main():
         logger.info(f"Successfully extracted {len(stations)} stations")
         logger.info(f"Data stored at: {storage_path}")
 
+        # Fail the Airflow task if there were partial extraction errors, 
+        # but only AFTER we have successfully saved the good data.
+        if getattr(extractor, 'failed_count', 0) > 0:
+            raise RuntimeError(f"Ingestion completed with {extractor.failed_count} failed networks. Check logs for 404s or timeouts.")
         # Log any failed networks to a dedicated file so we can monitor them without failing the DAG
         failed_networks = getattr(extractor, 'failed_networks', [])
         if failed_networks:
