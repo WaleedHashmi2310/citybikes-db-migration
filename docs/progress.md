@@ -30,6 +30,13 @@
 - [x] Dump records directly to MinIO in Parquet format.
 - [x] Apply intuitive time-based partitioning scheme (`YYYY/MM/dd`).
 
-## Phase 6: Observability [ ]
+## Phase 6: Data Warehousing (dbt + DuckDB) [ ]
+- [ ] Initialize local `dbt` project (`dbt_analytics`).
+- [ ] Configure `profiles.yml` for DuckDB with MinIO S3 credentials.
+- [ ] Define MinIO Parquet external source in `sources.yml`.
+- [ ] Implement `stg_stations` as an incremental model.
+- [ ] Create an analytical mart (e.g., daily aggregates).
+
+## Phase 7: Observability [ ]
 - [ ] Implement standard Python JSON logging in the ingestion scripts.
 - [ ] Add basic Prometheus metrics to Airflow/Kafka.

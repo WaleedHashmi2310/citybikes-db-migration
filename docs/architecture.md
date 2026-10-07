@@ -38,3 +38,8 @@ This document describes the stack and roles of each component in the data pipeli
 
 7. **Observability (Logging)**
    - Python logging module outputs basic logs to standard out, captured by Docker Compose.
+
+8. **DuckDB & dbt (Data Warehousing / Analytics)**
+   - **DuckDB**: An in-process OLAP database used to query the Data Lake.
+   - **dbt**: Data Build Tool orchestrates SQL transformations.
+   - **Design/Tradeoff**: Instead of querying thousands of Parquet files directly over HTTP for every analytical question, dbt incrementally loads new data from MinIO into a local `.duckdb` file. This resolves the "small files" issue from the Kafka Sink, insulates the analytics engine from network latency, and leverages DuckDB's native fast storage format for heavy aggregations.

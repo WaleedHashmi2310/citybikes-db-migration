@@ -5,11 +5,11 @@ x-airflow-common:
   build: .  
   environment:
     &airflow-common-env
-    TZ: 'Europe/Berlin' # Adds OS-level timezone
+    TZ: 'UTC' # Adds OS-level timezone
     # Sets the timezone for DAG schedules and execution dates
-    AIRFLOW__CORE__DEFAULT_TIMEZONE: 'Europe/Berlin'
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: 'UTC'
     # Sets the default timezone shown in the Airflow Web UI
-    AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: 'Europe/Berlin'
+    AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: 'UTC'
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow

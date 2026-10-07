@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: datalake
+    tables:
+      - name: raw_stations
+        config:
+          external_location: "s3://citybikes-archive/stations/pg.citybikes.stations/*/*/*/*.parquet"

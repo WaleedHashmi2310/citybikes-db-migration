@@ -41,3 +41,19 @@ Expanded the Postgres setup to include the full data stack:
 5. Trigger the DAG again and verify row counts do not increase (Idempotency).
 6. Check the Kafka UI or use `kafka-console-consumer.sh` to verify Debezium is streaming CDC events to the topic.
 7. Open the MinIO UI (`localhost:9001`) and verify the presence of Parquet files inside `citybikes-archive` structured by date folders.
+
+## Data Warehousing with dbt & DuckDB
+To enable high-performance analytics, we will introduce a modern data stack analytics layer:
+1. **Compute & Storage Engine**: DuckDB will serve as the local analytical database.
+2. **Transformations (ELT)**: `dbt` (Data Build Tool) will orchestrate the data models.
+3. **Incremental Loading**: A staging layer (`stg_stations`) will read Parquet files from MinIO via DuckDB's `httpfs` extension and incrementally append new data into a local DuckDB file (`warehouse.duckdb`). This solves the "small files" problem from Kafka Connect and insulates analytical queries from network latency.
+
+### Planned dbt Structure (`dbt_analytics/`)
+- `profiles.yml`: Configures the `dbt-duckdb` adapter with S3 credentials pointing to local MinIO.
+- `models/staging/sources.yml`: Defines the external MinIO Parquet path.
+- `models/staging/stg_stations.sql`: The incremental base model capturing new records.
+
+### MotherDuck Cloud Integration (Hybrid Push)
+To serve BI dashboards in the cloud without exposing the local MinIO instance to the internet, we implement a Hybrid Push pattern:
+1. `dbt` builds the analytics layer entirely locally inside `warehouse.duckdb`.
+2. A post-ETL Python script (`push_to_motherduck.py`) connects to the local DuckDB instance, attaches the MotherDuck cloud database (`md:citybikes`), and issues `CREATE OR REPLACE TABLE cloud.table AS SELECT * FROM local.table` commands to sync the final tables to the cloud.

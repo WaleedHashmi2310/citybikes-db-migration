@@ -55,12 +55,12 @@ docker exec -it airflow-webserver airflow dags trigger citybikes_ingestion_dag
 
 **List Kafka Topics:**
 ```bash
-docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+docker exec -it kafka kafka-topics --list --bootstrap-server localhost:9092
 ```
 
 **Consume messages from a CDC topic:**
 ```bash
-docker exec -it kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh \
+docker exec -it kafka kafka-console-consumer \
     --bootstrap-server localhost:9092 \
     --topic pg.citybikes.stations \
     --from-beginning

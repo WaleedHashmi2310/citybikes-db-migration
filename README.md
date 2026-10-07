@@ -1,41 +1,90 @@
-# CityBikes Database Migration & CDC Pipeline
+# CityBikes Modern Data Stack
 
 ## Overview
-This project extracts real-time bike-sharing data from the [CityBikes API](http://api.citybik.es/v2/), normalizes it via `pydantic`, and stores it into a robust PostgreSQL operational database. Changes are then captured via Debezium CDC and streamed to a MinIO S3 bucket in Parquet format using Kafka Connect.
+This project is an end-to-end data engineering pipeline that extracts real-time bike-sharing data from the [CityBikes API](http://api.citybik.es/v2/), stores it in a robust PostgreSQL database, captures changes via Debezium CDC, archives the data in a MinIO Data Lake as Parquet files, and transforms it into highly optimized analytical marts using DuckDB and dbt. Finally, these marts are synced to MotherDuck (cloud DuckDB) for lightning-fast BI dashboarding in tools like Looker Studio, Preset, or Hex.
+
+All timestamps across the stack are strictly normalized to **UTC**.
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph "1. Ingestion (Airflow & Python)"
+        API[CityBikes API] -->|Python/Pydantic| PG[(PostgreSQL\nOperational DB)]
+        Airflow([Airflow DAG]) -.->|Orchestrates| API
+    end
+
+    subgraph "2. Change Data Capture (Kafka)"
+        PG -->|Logical Replication| Debezium[Debezium CDC]
+        Debezium -->|JSON streams| Kafka[Apache Kafka]
+    end
+
+    subgraph "3. Data Lake (MinIO)"
+        Kafka -->|Kafka Connect| S3Sink[S3 Parquet Sink]
+        S3Sink -->|Parquet Files| MinIO[(MinIO Object Storage)]
+    end
+
+    subgraph "4. Transformation (dbt & DuckDB)"
+        MinIO -->|httpfs read| DuckDB[(Local DuckDB Warehouse)]
+        DBT([dbt Core]) -.->|SQL Models| DuckDB
+        DuckDB -->|Staging & Marts| DuckDB
+    end
+
+    subgraph "5. Presentation (MotherDuck Cloud)"
+        DuckDB -->|Python push script| MotherDuck[(MotherDuck Cloud)]
+        MotherDuck -->|Postgres Endpoint| LookerStudio[Looker Studio / Preset]
+    end
+```
 
 ## Tech Stack
-* **Extraction:** Python 3.12 (Requests, Pydantic)
-* **Orchestration:** Apache Airflow
+* **Language / Environment:** Python 3.12, `uv`
+* **Ingestion & Orchestration:** Apache Airflow, Pydantic, Requests
 * **Operational Database:** PostgreSQL 16
 * **Database Migrations:** Flyway
-* **Archival Storage:** MinIO (S3 compatible) via Kafka Connect Sink (Parquet format)
-* **Real-time CDC:** Debezium & Kafka
+* **Change Data Capture (CDC):** Debezium, Apache Kafka
+* **Data Lake (Archival Storage):** MinIO (S3 Compatible), Kafka Connect (Parquet Sink)
+* **Data Warehouse / Analytics:** DuckDB, dbt (Data Build Tool)
+* **Cloud BI Backend:** MotherDuck (Cloud DuckDB)
 * **Containerization:** Docker Compose
 
-## End-to-End Execution
+## Quickstart
+
 1. **Setup Environment:**
    ```bash
    cp .env.example .env
+   # Ensure you add your MOTHERDUCK_TOKEN in .env!
    ```
+
 2. **Start Infrastructure:**
    ```bash
    docker compose up -d --build
    ```
-3. **Accumulate Data (Airflow -> Postgres):**
-   Access Airflow at `http://localhost:8080` (User/Pass: `airflow`) and trigger `citybikes_ingestion_dag`. Wait for the run to succeed.
-4. **Enable CDC & Bulk Load (Postgres -> Kafka):**
-   Register the Debezium connector. It will instantly snapshot existing data, then stream real-time WAL changes.
+
+3. **Ingest Data:**
+   Access Airflow at `http://localhost:8080` (User/Pass: `airflow`) and trigger `citybikes_ingestion_dag`.
+
+4. **Enable CDC (Postgres -> Kafka):**
    ```bash
    curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" \
    localhost:8083/connectors/ -d @cdc/register-postgres.json
    ```
+
 5. **Enable Data Lake Sink (Kafka -> MinIO):**
-   Register the S3 Sink. It will consume the Kafka stream and write Parquet files to MinIO.
    ```bash
    curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" \
    localhost:8083/connectors/ -d @cdc/register-s3-sink.json
    ```
-6. **Verify Archives:**
-   Access MinIO at `http://localhost:9001` (User/Pass: `minioadmin`) to view the resulting Parquet files in the `citybikes-archive` bucket.
 
-*Detailed documentation can be found in the `docs/` folder.*
+6. **Build Analytical Marts (dbt & DuckDB):**
+   ```bash
+   cd dbt_analytics
+   uv run dbt run
+   ```
+
+7. **Sync to Cloud BI (MotherDuck):**
+   ```bash
+   uv run python push_to_motherduck.py
+   ```
+   *Your 10 analytical marts are now synced to MotherDuck's `public` schema and ready for Looker Studio, Preset, or any other BI tool!*
+
+*See the `docs/` folder for more detailed architecture notes and command references.*
