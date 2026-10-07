@@ -1,5 +1,13 @@
 # CityBikes Modern Data Stack
 
+![Python](https://img.shields.io/badge/python-3.12-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Apache Airflow](https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169e1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
+![DuckDB](https://img.shields.io/badge/DuckDB-FFF000?style=for-the-badge&logo=duckdb&logoColor=black)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
 ## Overview
 This project is an end-to-end data engineering pipeline that extracts real-time bike-sharing data from the [CityBikes API](http://api.citybik.es/v2/), stores it in a robust PostgreSQL database, captures changes via Debezium CDC, archives the data in a MinIO Data Lake as Parquet files, and transforms it into highly optimized analytical marts using DuckDB and dbt. Finally, these marts are synced to MotherDuck (cloud DuckDB) for lightning-fast BI dashboarding in tools like Looker Studio, Preset, or Hex.
 
